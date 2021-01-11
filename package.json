@@ -17,10 +17,7 @@
     "appId": "xyz.radicle.radicle-upstream",
     "artifactName": "${name}-${version}.${ext}",
     "afterSign": "builder/notarize.js",
-    "files": [
-      "public/**/*",
-      "native/**/*"
-    ],
+    "files": ["public/**/*", "native/**/*"],
     "directories": {
       "buildResources": "public"
     },
@@ -39,9 +36,7 @@
       }
     ],
     "linux": {
-      "target": [
-        "Appimage"
-      ],
+      "target": ["Appimage"],
       "extraFiles": [
         {
           "from": "/usr/lib/x86_64-linux-gnu/libhogweed.so.4",
@@ -54,9 +49,7 @@
       ]
     },
     "mac": {
-      "target": [
-        "dmg"
-      ],
+      "target": ["dmg"],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "builder/entitlements.mac.plist",
@@ -132,7 +125,7 @@
     "manage:id": "scripts/manage-identity.sh",
     "_private:start": "yarn _private:proxy:build:release && yarn run-p --race _private:rollup:watch _private:electron:start",
     "_private:start:dev": "yarn _private:proxy:build && yarn run-p --race _private:rollup:watch _private:electron:start",
-    "_private:test:integration": "wait-on tcp:17246 && yarn _private:rollup:build && yarn run cypress run; status=$?; [ \"$CI\" = true ] && kill `pidof radicle-proxy`; exit $status",
+    "_private:test:integration": "yarn _private:rollup:build && yarn run cypress run",
     "_private:test:integration:debug": "wait-on tcp:17246 && yarn run cypress open",
     "_private:electron:start": "wait-on ./public/bundle.js ./native/main.comp.js && NODE_ENV=development electron .",
     "_private:dist:clean": "rm -rf ./dist && mkdir ./dist && yarn _private:proxy:clean && yarn _private:rollup:clean",
@@ -171,19 +164,12 @@
     }
   },
   "lint-staged": {
-    "*.{js,css,json,html}": [
-      "prettier --write"
-    ],
-    "*.js": [
-      "eslint --fix --max-warnings=0"
-    ],
+    "*.{js,css,json,html}": ["prettier --write"],
+    "*.js": ["eslint --fix --max-warnings=0"],
     "*.svelte": [
       "prettier --plugin-search-dir=. --write",
       "eslint --fix --max-warnings=0"
     ],
-    "*.ts": [
-      "prettier --write",
-      "eslint --fix --max-warnings=0"
-    ]
+    "*.ts": ["prettier --write", "eslint --fix --max-warnings=0"]
   }
 }

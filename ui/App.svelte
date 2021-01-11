@@ -1,6 +1,7 @@
 <script>
   import Router, { push, location } from "svelte-spa-router";
 
+  import { backendAddressStore } from "./src/api.ts";
   import * as hotkeys from "./src/hotkeys.ts";
   import "./src/localPeer.ts";
   import * as path from "./src/path.ts";
@@ -32,6 +33,9 @@
   import Project from "./Screen/Project.svelte";
   import Settings from "./Screen/Settings.svelte";
   import UserProfile from "./Screen/UserProfile.svelte";
+
+  export let backendAddress;
+  $backendAddressStore = backendAddress;
 
   const routes = {
     "/": Blank,
