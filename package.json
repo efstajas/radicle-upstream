@@ -17,7 +17,10 @@
     "appId": "xyz.radicle.radicle-upstream",
     "artifactName": "${name}-${version}.${ext}",
     "afterSign": "builder/notarize.js",
-    "files": ["public/**/*", "native/**/*"],
+    "files": [
+      "public/**/*",
+      "native/**/*"
+    ],
     "directories": {
       "buildResources": "public"
     },
@@ -36,7 +39,9 @@
       }
     ],
     "linux": {
-      "target": ["Appimage"],
+      "target": [
+        "Appimage"
+      ],
       "extraFiles": [
         {
           "from": "/usr/lib/x86_64-linux-gnu/libhogweed.so.4",
@@ -49,7 +54,9 @@
       ]
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "builder/entitlements.mac.plist",
@@ -68,8 +75,10 @@
     "@types/node": "^14.14.19",
     "@types/sinon": "^9.0.10",
     "@types/twemoji": "^12.1.1",
+    "@types/wait-on": "^5.2.0",
     "@typescript-eslint/eslint-plugin": "^4.11.1",
     "@typescript-eslint/parser": "^4.11.1",
+    "axios": "^0.21.1",
     "chokidar": "^3.4.3",
     "cypress": "^6.2.1",
     "electron": "^11.1.1",
@@ -164,12 +173,19 @@
     }
   },
   "lint-staged": {
-    "*.{js,css,json,html}": ["prettier --write"],
-    "*.js": ["eslint --fix --max-warnings=0"],
+    "*.{js,css,json,html}": [
+      "prettier --write"
+    ],
+    "*.js": [
+      "eslint --fix --max-warnings=0"
+    ],
     "*.svelte": [
       "prettier --plugin-search-dir=. --write",
       "eslint --fix --max-warnings=0"
     ],
-    "*.ts": ["prettier --write", "eslint --fix --max-warnings=0"]
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0"
+    ]
   }
 }
