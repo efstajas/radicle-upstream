@@ -9,6 +9,7 @@
   import Button from "design-system/Button.svelte";
   import CheckCircle from "design-system/icons/CheckCircle.svelte";
   import ChevronDown from "design-system/icons/ChevronDown.svelte";
+import Circle from "design-system/icons/Circle.svelte";
   import Ellipsis from "design-system/icons/Ellipsis.svelte";
   import { slide } from "svelte/transition";
 
@@ -118,10 +119,17 @@
 <div class="check-item" class:done on:click={onClick}>
   <div class="opener">
     <div class="icon-and-title">
-      <CheckCircle
+      {#if done}
+        <CheckCircle
+          style={`fill: var(--${
+            done ? "color-positive-level-6" : "color-foreground-level-4"
+          }); transition: fill .3s ease`} />
+      {:else}
+        <Circle
         style={`fill: var(--${
           done ? "color-positive-level-6" : "color-foreground-level-4"
         }); transition: fill .3s ease`} />
+      {/if}
       <h3>{title}</h3>
     </div>
     <div class="badge-and-chevron">
