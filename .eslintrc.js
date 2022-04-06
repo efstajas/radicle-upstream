@@ -16,6 +16,9 @@ module.exports = {
     ecmaVersion: 2019,
     sourceType: "module",
   },
+  globals: {
+    NodeJS: true,
+  },
   ignorePatterns: ["!.license-compliancerc.js"],
   extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   plugins: ["svelte3", "@typescript-eslint", "no-only-tests"],

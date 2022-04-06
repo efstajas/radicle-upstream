@@ -6,147 +6,247 @@
  LICENSE file.
 -->
 <script lang="ts">
-  import { fade, fly } from "svelte/transition";
+  import { onDestroy, onMount } from "svelte";
+  import { clean, satisfies } from "semver";
 
-  import { retryFetch } from "ui/src/retryOnError";
-  import { State } from "ui/src/onboarding";
+  import * as ipc from "ui/src/ipc";
   import * as proxy from "ui/src/proxy";
-  import * as error from "ui/src/error";
-  import * as router from "ui/src/router";
-  import * as screen from "ui/src/screen";
-  import * as session from "ui/src/session";
-  import * as notification from "ui/src/notification";
+  // import * as router from "ui/src/router";
 
-  import Welcome from "./OnboardingModal/Welcome.svelte";
-  import EnterName from "./OnboardingModal/EnterName.svelte";
-  import EnterPassphrase from "./OnboardingModal/EnterPassphrase.svelte";
-  import Success from "./OnboardingModal/Success.svelte";
+  import { Step, DependencyCheckResult } from "ui/src/onboarding";
 
-  let peerId: string = "";
-  let handle: string | undefined;
-  let state = State.Welcome;
-  let createIdentityInProgress = false;
+  import RadicleLogo from "design-system/RadicleLogo.svelte";
+  import CheckItem from "./OnboardingModal/CheckItem.svelte";
+  import CodeBlock from "./OnboardingModal/CodeBlock.svelte";
 
-  let inY = 1000;
-  let outY = -1000;
+  let activeStep: Step = Step.installRadCli;
+  let doneSteps: Step[] = [];
 
-  const animateForward = () => {
-    inY = 1000;
-    outY = -1000;
-  };
+  let radCliVersion: string;
+  let identityName: string;
+  let gitVersion: string;
 
-  const animateBackward = () => {
-    inY = -1000;
-    outY = 1000;
-  };
+  const stepSequence: Step[] = [
+    Step.installRadCli,
+    Step.createRadIdentity,
+    Step.addUpstreamCliToPath,
+    Step.setUpGit
+  ]
 
-  const goToProfile = () => {
-    // App.svelte checks whether to load onboarding or the app depending if
-    // the session data is present or not.
-    session.fetch();
-  };
+  const markStepAsDone = (stepName: Step) => {
+    doneSteps = [...doneSteps, stepName];
 
-  const goToWallet = () => {
-    // App.svelte checks whether to load onboarding or the app depending if
-    // the session data is present or not.
-    session.fetch();
-    router.replace({ type: "wallet", activeTab: "transactions" });
-  };
+    while (doneSteps.includes(activeStep)) {
+      // if (stepSequence.indexOf(activeStep) + 1 === stepSequence.length) {
+      //   router.replace({ type: "profile" });
+      // }
 
-  const onCreateIdentity = async (handle: string, passphrase: string) => {
-    await screen.withLock(async () => {
-      try {
-        createIdentityInProgress = true;
-        await session.createKeystore(passphrase);
-        // Retry until the API is up
-        const identity = await retryFetch(
-          () => proxy.client.identity.create({ handle }),
-          100,
-          50
-        );
-        peerId = identity.peerId;
-        state = State.SuccessView;
-      } catch (err: unknown) {
-        animateBackward();
-        state = State.EnterName;
-        notification.showException(
-          new error.Error({
-            code: error.Code.IdentityCreationFailure,
-            message: `Could not create identity`,
-            details: {
-              handle,
-            },
-            source: err,
-          })
-        );
-      } finally {
-        createIdentityInProgress = false;
+      activeStep = stepSequence[stepSequence.indexOf(activeStep) + 1];
+    }
+  }
+
+  const check = async (forStep: Step): Promise<DependencyCheckResult> => {
+    switch (forStep) {
+      case Step.installRadCli: {
+        const radCliCheck = await ipc.checkShellForCommand("rad");
+
+        if (radCliCheck.exists) {
+          const verString = clean(radCliCheck.version.replace("rad", ""));
+
+          if (!verString) {return { step: forStep, passed: false };}
+
+          radCliVersion = verString;
+
+          return { step: forStep, passed: true, version: verString }
+        }
+
+        break;
       }
-    });
-  };
+      case Step.addUpstreamCliToPath: {
+        const upstreamCliCheck = await ipc.checkShellForCommand("upstream");
+
+        console.log("upstream", upstreamCliCheck.exists)
+
+        if (upstreamCliCheck.exists) {
+          return { step: forStep, passed: true, version: upstreamCliCheck.version }
+        }
+        
+        break;
+      }
+      case Step.createRadIdentity: {
+        const proxySession = await proxy.client.sessionGet();
+
+        if (proxySession.identity) {
+          identityName = proxySession.identity.metadata.handle;
+
+          return { step: Step.createRadIdentity, passed: true, name: proxySession.identity.metadata.handle }
+        }
+
+        break;
+      }
+      case Step.setUpGit: {
+        const gitCheck = await ipc.checkShellForCommand("git");
+
+        if (gitCheck.exists) {
+          const verString = clean(gitCheck.version.replace("git version", ""));
+
+          if (!verString) {return { step: forStep, passed: false };}
+
+          if (satisfies(verString, ">=2.35.1")) {
+            gitVersion = verString;
+            return { step: forStep, passed: true, version: verString }
+          }
+        }
+
+        break;
+    }
+  }
+
+  return { step: forStep, passed: false }
+}
+
+  const performCheck = async (forStep: Step) => {
+    const result = await check(forStep);
+
+    if (result.passed) {
+      markStepAsDone(forStep);
+    }
+  }
+
+  let checkInterval: NodeJS.Timer;
+
+  $: {
+    clearInterval(checkInterval);
+
+    checkInterval = setInterval(() => {
+      performCheck(activeStep);
+    }, 1000);
+  }
+
+  onDestroy(() => {
+    clearInterval(checkInterval);
+  });
+
+  onMount(async () => {
+    // await performCheck(Step.installRadCli);
+    // await performCheck(Step.createRadIdentity);
+    // await performCheck(Step.addUpstreamCliToPath);
+    // await performCheck(Step.setUpGit);
+  });
 </script>
 
 <style>
-  .modal {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-  }
+.container {
+  width: 100vw;
+  padding: 10%;
+  max-width: 1024px;
+  margin: 0 auto;
+}
 
-  .content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
+.welcome-text {
+  margin: 96px 0;
+}
 
-  .inner {
-    width: 33.75rem;
-  }
+.welcome-text > h1 {
+  margin-bottom: 16px;
+}
+
+h1, p {
+  max-width: 544px;
+}
+
+p {
+  color: var(--color-foreground-level-6)
+}
+
+.check-item-container {
+  margin: 0 -16px;
+}
+
+.step-content > *:not(:last-child) {
+  margin-bottom: 24px;
+}
+
+.step-content > *:not(:first-child) {
+  margin-top: 24px;
+}
 </style>
 
 <div class="modal">
-  {#if state === State.Welcome}
-    <div class="content" in:fade out:fly={{ y: outY }}>
-      <div class="inner">
-        <Welcome
-          on:next={() => {
-            state = State.EnterName;
-          }} />
-      </div>
+  <div class="container">
+    <RadicleLogo />
+    <div class="welcome-text">
+      <h1>Welcome to Radicle</h1>
+      <p>Radicle is a free and open-source way to host, share, and build software together. To get started, we just need to complete a few simple steps.</p>
     </div>
-  {:else if state === State.EnterName}
-    <div class="content" in:fly={{ y: inY }} out:fly={{ y: outY }}>
-      <div class="inner">
-        <EnterName
-          {handle}
-          on:next={event => {
-            animateForward();
-            handle = event.detail;
-            state = State.EnterPassphrase;
-          }} />
-      </div>
+    <div class="check-item-container">
+      <CheckItem
+        expanded={activeStep === Step.installRadCli}
+        title="Install the Radicle CLI"
+        onSkip={() => markStepAsDone(Step.installRadCli)}
+        done={doneSteps.includes(Step.installRadCli)}
+        waitingFor="Radicle CLI to be installed"
+        badge={radCliVersion && `Version ${radCliVersion} installed`}
+      >
+        <div class="step-content" slot="content">
+          <p>First, let"s install the Radicle CLI. You"ll use the CLI to create and publish projects to the Radicle network, or clone existing ones to your machine.</p>
+          <p>To get started, ensure you have <a class="typo-link" href="https://doc.rust-lang.org/cargo/getting-started/installation.html">Cargo</a> and <a class="typo-link" href="https://cmake.org/install/">CMake</a> installed, then run:</p>
+          <CodeBlock command="cargo install --force --locked --git https://seed.alt-clients.radicle.xyz/radicle-cli.git radicle-cli" />
+          <p>On x86_64, you can alternatively install using Homebrew:</p>
+          <CodeBlock command="brew tap radicle/cli https://seed.alt-clients.radicle.xyz/radicle-cli-homebrew.git && brew install radicle/cli/core" />
+        </div>
+      </CheckItem>
+      <CheckItem
+        done={doneSteps.includes(Step.createRadIdentity)}
+        expanded={activeStep === Step.createRadIdentity}
+        onSkip={() => markStepAsDone(Step.createRadIdentity)}
+        title="Create your Radicle identity"
+        waitingFor="Radicle identity to be created"
+        badge={identityName && `Hello, ${identityName} 👋`}
+      >
+        <div class="step-content" slot="content">
+          <p>It"s time to create your unique Radicle identity. You’ll unlock Upstream and the CLI with your passphrase, and all your activity on the Radicle network will be signed with your Ed25519 keypair.</p>
+          <CodeBlock command="rad auth">
+            <span slot="output">
+              Initializing your 🌱 profile and identity<br/>
+              <br/>
+              <span style="color: var(--color-positive)">ok</span> Username · koops<br/>
+              <span style="color: var(--color-positive)">ok</span> Passphrase · ********<br/>
+              <span style="color: var(--color-positive)">ok</span> Creating your 🌱 Ed25519 keypair...<br/>
+              <span style="color: var(--color-positive)">ok</span> Adding to ssh-agent...<br/>
+              <span style="color: var(--color-positive)">ok</span> Profile 3ae66df3-6ac7-4466-9013-83839749ed05 created.<br/>
+              <br/>
+              Your radicle Peer ID is <span style="color: var(--color-positive)">hyncoz7x4s8x9447g6yogy4iy41q8i4juy5uhou57w1ga7obt644wo</span>. This identifies your device.<br/>
+              Your personal 🌱 URN is <span style="color: var(--color-positive)">rad:git:hnrkmx6trm4bu19bwa4apbxj8ftw8f7amfdyy</span>. This identifies you across devices.<br/>
+              <br/>
+              <span style="color: var(--color-primary)">=> To create a radicle project, run `rad init` from a git repository.</span><br/>
+            </span>
+          </CodeBlock>
+        </div>
+      </CheckItem>
+      <CheckItem
+        done={doneSteps.includes(Step.addUpstreamCliToPath)}
+        expanded={activeStep === Step.addUpstreamCliToPath}
+        onSkip={() => markStepAsDone(Step.addUpstreamCliToPath)}
+        title="Add the Upstream CLI to PATH"
+        waitingFor="the Upstream CLI to be installed"
+      >
+        <div class="step-content" slot="content">
+          <p>The Upstream CLI adds additional commands needed for code collaboration with upstream. Please ensure that the §HOME/.radicle/bin directory is added to your shell"s PATH.</p>
+        </div>
+      </CheckItem>
+      <CheckItem
+        done={doneSteps.includes(Step.setUpGit)}
+        expanded={activeStep === Step.setUpGit}
+        onSkip={() => markStepAsDone(Step.setUpGit)}
+        title="Set up Git"
+        badge={gitVersion && `Version ${gitVersion} installed`}
+      >
+        <div class="step-content" slot="content">
+          <p>Radicle is built on Git. In order to collaborate with others, you"ll need at least version 2.35.1 of Git installed.</p>
+          <p>You can download the latest version on the <a href="https://git-scm.com/download/" class="typo-link">official website</a>.</p>
+        </div>
+      </CheckItem>
     </div>
-  {:else if state === State.EnterPassphrase}
-    <div class="content" in:fly={{ y: inY }} out:fly={{ y: outY }}>
-      <div class="inner">
-        <EnterPassphrase
-          disabled={createIdentityInProgress}
-          on:previous={() => {
-            animateBackward();
-            state = State.EnterName;
-          }}
-          on:next={event => {
-            // @ts-expect-error: the value of `state` guarantees that `handle` is defined
-            onCreateIdentity(handle, event.detail);
-          }} />
-      </div>
-    </div>
-  {:else if state === State.SuccessView}
-    <div class="content" in:fly={{ y: inY }}>
-      <div class="inner">
-        <Success {peerId} on:profile={goToProfile} on:wallet={goToWallet} />
-      </div>
-    </div>
-  {/if}
+  </div>
 </div>

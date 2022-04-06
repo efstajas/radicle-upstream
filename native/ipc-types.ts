@@ -32,6 +32,15 @@ export interface CustomProtocolInvocation {
   url: string;
 }
 
+export type ShellCommandCheckResult =
+  | {
+      exists: true;
+      version: string;
+    }
+  | {
+      exists: false;
+    };
+
 // RPC interface exposed by the main process to the renderer.
 export interface MainProcess {
   clipboardWriteText(text: string): Promise<void>;
@@ -41,6 +50,7 @@ export interface MainProcess {
   openUrl(path: string): Promise<void>;
   // Get the git global default branch, which can be customized by the user.
   getGitGlobalDefaultBranch(): Promise<string | undefined>;
+  checkShellForCommand(command: string): Promise<ShellCommandCheckResult>;
 }
 
 export const mainProcessMethods: Array<keyof MainProcess> = [
@@ -50,4 +60,5 @@ export const mainProcessMethods: Array<keyof MainProcess> = [
   "openPath",
   "openUrl",
   "getGitGlobalDefaultBranch",
+  "checkShellForCommand",
 ];

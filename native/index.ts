@@ -15,7 +15,12 @@ import {
   ProxyProcessManager,
   Options as ProxyProcessOptions,
 } from "./proxy-process-manager";
-import { MainMessageKind, MainProcess, mainProcessMethods } from "./ipc-types";
+import {
+  MainMessageKind,
+  MainProcess,
+  mainProcessMethods,
+  ShellCommandCheckResult,
+} from "./ipc-types";
 import { radicleUrlSchema, throttled } from "./nativeCustomProtocolHandler";
 import { openExternalLink, WindowManager } from "./windowManager";
 import { config, Config } from "./config";
@@ -281,6 +286,22 @@ function createMainProcessIpcHandlers(): MainProcess {
         return stderr ? undefined : stdout.trim();
       } catch (error: unknown) {
         return undefined;
+      }
+    },
+    async checkShellForCommand(
+      command: string
+    ): Promise<ShellCommandCheckResult> {
+      try {
+        const { stdout, stderr } = await execa(command, ["--version"], {
+          shell: process.env.SHELL,
+          uid: os.userInfo().uid,
+        });
+
+        console.log("checkShell", stdout);
+
+        return stderr ? { exists: false } : { exists: true, version: stdout };
+      } catch (e: unknown) {
+        return { exists: false };
       }
     },
   };

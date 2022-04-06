@@ -107,7 +107,7 @@
             $activeRouteStore.type === "lock" ||
             $activeRouteStore.type === "boot"
           ) {
-            router.replace({ type: "profile" });
+            router.replace({ type: "onboarding" });
           }
         } else {
           unreachable(session.data);
