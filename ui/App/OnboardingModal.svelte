@@ -128,9 +128,9 @@
   $: {
     clearInterval(checkInterval);
 
-    // checkInterval = setInterval(() => {
-    //   performCheck(activeStep);
-    // }, 1000);
+    checkInterval = setInterval(() => {
+      performCheck(activeStep);
+    }, 1000);
   }
 
   onDestroy(() => {
@@ -138,10 +138,10 @@
   });
 
   onMount(async () => {
-    // await performCheck(Step.installRadCli);
-    // await performCheck(Step.createRadIdentity);
-    // await performCheck(Step.addUpstreamCliToPath);
-    // await performCheck(Step.setUpGit);
+    await performCheck(Step.installRadCli);
+    await performCheck(Step.createRadIdentity);
+    await performCheck(Step.addUpstreamCliToPath);
+    await performCheck(Step.setUpGit);
   });
 </script>
 
