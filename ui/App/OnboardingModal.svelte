@@ -138,10 +138,9 @@
   });
 
   onMount(async () => {
-    await performCheck(Step.installRadCli);
-    await performCheck(Step.createRadIdentity);
-    await performCheck(Step.addUpstreamCliToPath);
-    await performCheck(Step.setUpGit);
+    for (const step of stepSequence) {
+      await performCheck(step);
+    }
   });
 </script>
 
