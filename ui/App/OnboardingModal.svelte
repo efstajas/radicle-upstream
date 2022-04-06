@@ -148,9 +148,12 @@
 </script>
 
 <style>
+  .wrapper {
+    width: 100vw;
+  }
   .container {
     width: 100vw;
-    padding: 10%;
+    padding: 128px;
     max-width: 1024px;
     margin: 0 auto;
   }
@@ -185,7 +188,7 @@
   }
 </style>
 
-<div class="modal">
+<div class="wrapper">
   <div class="container">
     <RadicleLogo />
     <div class="welcome-text">

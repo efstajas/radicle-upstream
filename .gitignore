@@ -23,3 +23,4 @@ sandbox
 !.yarn/versions
 .pnp.*
 .vagrant
+.gitsigners
