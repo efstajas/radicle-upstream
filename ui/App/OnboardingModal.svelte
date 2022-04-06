@@ -30,8 +30,8 @@
     Step.installRadCli,
     Step.createRadIdentity,
     Step.addUpstreamCliToPath,
-    Step.setUpGit
-  ]
+    Step.setUpGit,
+  ];
 
   const markStepAsDone = (stepName: Step) => {
     doneSteps = [...doneSteps, stepName];
@@ -43,7 +43,7 @@
 
       activeStep = stepSequence[stepSequence.indexOf(activeStep) + 1];
     }
-  }
+  };
 
   const check = async (forStep: Step): Promise<DependencyCheckResult> => {
     switch (forStep) {
@@ -53,11 +53,13 @@
         if (radCliCheck.exists) {
           const verString = clean(radCliCheck.version.replace("rad", ""));
 
-          if (!verString) {return { step: forStep, passed: false };}
+          if (!verString) {
+            return { step: forStep, passed: false };
+          }
 
           radCliVersion = verString;
 
-          return { step: forStep, passed: true, version: verString }
+          return { step: forStep, passed: true, version: verString };
         }
 
         break;
@@ -65,12 +67,16 @@
       case Step.addUpstreamCliToPath: {
         const upstreamCliCheck = await ipc.checkShellForCommand("upstream");
 
-        console.log("upstream", upstreamCliCheck.exists)
+        console.log("upstream", upstreamCliCheck.exists);
 
         if (upstreamCliCheck.exists) {
-          return { step: forStep, passed: true, version: upstreamCliCheck.version }
+          return {
+            step: forStep,
+            passed: true,
+            version: upstreamCliCheck.version,
+          };
         }
-        
+
         break;
       }
       case Step.createRadIdentity: {
@@ -79,7 +85,11 @@
         if (proxySession.identity) {
           identityName = proxySession.identity.metadata.handle;
 
-          return { step: Step.createRadIdentity, passed: true, name: proxySession.identity.metadata.handle }
+          return {
+            step: Step.createRadIdentity,
+            passed: true,
+            name: proxySession.identity.metadata.handle,
+          };
         }
 
         break;
@@ -90,20 +100,22 @@
         if (gitCheck.exists) {
           const verString = clean(gitCheck.version.replace("git version", ""));
 
-          if (!verString) {return { step: forStep, passed: false };}
+          if (!verString) {
+            return { step: forStep, passed: false };
+          }
 
           if (satisfies(verString, ">=2.35.1")) {
             gitVersion = verString;
-            return { step: forStep, passed: true, version: verString }
+            return { step: forStep, passed: true, version: verString };
           }
         }
 
         break;
+      }
     }
-  }
 
-  return { step: forStep, passed: false }
-}
+    return { step: forStep, passed: false };
+  };
 
   const performCheck = async (forStep: Step) => {
     const result = await check(forStep);
@@ -111,7 +123,7 @@
     if (result.passed) {
       markStepAsDone(forStep);
     }
-  }
+  };
 
   let checkInterval: NodeJS.Timer;
 
@@ -128,48 +140,49 @@
   });
 
   onMount(async () => {
-    // await performCheck(Step.installRadCli);
-    // await performCheck(Step.createRadIdentity);
-    // await performCheck(Step.addUpstreamCliToPath);
-    // await performCheck(Step.setUpGit);
+    await performCheck(Step.installRadCli);
+    await performCheck(Step.createRadIdentity);
+    await performCheck(Step.addUpstreamCliToPath);
+    await performCheck(Step.setUpGit);
   });
 </script>
 
 <style>
-.container {
-  width: 100vw;
-  padding: 10%;
-  max-width: 1024px;
-  margin: 0 auto;
-}
+  .container {
+    width: 100vw;
+    padding: 10%;
+    max-width: 1024px;
+    margin: 0 auto;
+  }
 
-.welcome-text {
-  margin: 96px 0;
-}
+  .welcome-text {
+    margin: 96px 0;
+  }
 
-.welcome-text > h1 {
-  margin-bottom: 16px;
-}
+  .welcome-text > h1 {
+    margin-bottom: 16px;
+  }
 
-h1, p {
-  max-width: 544px;
-}
+  h1,
+  p {
+    max-width: 544px;
+  }
 
-p {
-  color: var(--color-foreground-level-6)
-}
+  p {
+    color: var(--color-foreground-level-6);
+  }
 
-.check-item-container {
-  margin: 0 -16px;
-}
+  .check-item-container {
+    margin: 0 -16px;
+  }
 
-.step-content > *:not(:last-child) {
-  margin-bottom: 24px;
-}
+  .step-content > *:not(:last-child) {
+    margin-bottom: 24px;
+  }
 
-.step-content > *:not(:first-child) {
-  margin-top: 24px;
-}
+  .step-content > *:not(:first-child) {
+    margin-top: 24px;
+  }
 </style>
 
 <div class="modal">
@@ -177,7 +190,10 @@ p {
     <RadicleLogo />
     <div class="welcome-text">
       <h1>Welcome to Radicle</h1>
-      <p>Radicle is a free and open-source way to host, share, and build software together. To get started, we just need to complete a few simple steps.</p>
+      <p>
+        Radicle is a free and open-source way to host, share, and build software
+        together. To get started, we just need to complete a few simple steps.
+      </p>
     </div>
     <div class="check-item-container">
       <CheckItem
@@ -186,14 +202,26 @@ p {
         onSkip={() => markStepAsDone(Step.installRadCli)}
         done={doneSteps.includes(Step.installRadCli)}
         waitingFor="Radicle CLI to be installed"
-        badge={radCliVersion && `Version ${radCliVersion} installed`}
-      >
+        badge={radCliVersion && `Version ${radCliVersion} installed`}>
         <div class="step-content" slot="content">
-          <p>First, let"s install the Radicle CLI. You"ll use the CLI to create and publish projects to the Radicle network, or clone existing ones to your machine.</p>
-          <p>To get started, ensure you have <a class="typo-link" href="https://doc.rust-lang.org/cargo/getting-started/installation.html">Cargo</a> and <a class="typo-link" href="https://cmake.org/install/">CMake</a> installed, then run:</p>
-          <CodeBlock command="cargo install --force --locked --git https://seed.alt-clients.radicle.xyz/radicle-cli.git radicle-cli" />
+          <p>
+            First, let"s install the Radicle CLI. You"ll use the CLI to create
+            and publish projects to the Radicle network, or clone existing ones
+            to your machine.
+          </p>
+          <p>
+            To get started, ensure you have <a
+              class="typo-link"
+              href="https://doc.rust-lang.org/cargo/getting-started/installation.html"
+              >Cargo</a>
+            and <a class="typo-link" href="https://cmake.org/install/">CMake</a>
+            installed, then run:
+          </p>
+          <CodeBlock
+            command="cargo install --force --locked --git https://seed.alt-clients.radicle.xyz/radicle-cli.git radicle-cli" />
           <p>On x86_64, you can alternatively install using Homebrew:</p>
-          <CodeBlock command="brew tap radicle/cli https://seed.alt-clients.radicle.xyz/radicle-cli-homebrew.git && brew install radicle/cli/core" />
+          <CodeBlock
+            command="brew tap radicle/cli https://seed.alt-clients.radicle.xyz/radicle-cli-homebrew.git && brew install radicle/cli/core" />
         </div>
       </CheckItem>
       <CheckItem
@@ -202,24 +230,41 @@ p {
         onSkip={() => markStepAsDone(Step.createRadIdentity)}
         title="Create your Radicle identity"
         waitingFor="Radicle identity to be created"
-        badge={identityName && `Hello, ${identityName} 👋`}
-      >
+        badge={identityName && `Hello, ${identityName} 👋`}>
         <div class="step-content" slot="content">
-          <p>It"s time to create your unique Radicle identity. You’ll unlock Upstream and the CLI with your passphrase, and all your activity on the Radicle network will be signed with your Ed25519 keypair.</p>
+          <p>
+            It"s time to create your unique Radicle identity. You’ll unlock
+            Upstream and the CLI with your passphrase, and all your activity on
+            the Radicle network will be signed with your Ed25519 keypair.
+          </p>
           <CodeBlock command="rad auth">
             <span slot="output">
-              Initializing your 🌱 profile and identity<br/>
-              <br/>
-              <span style="color: var(--color-positive)">ok</span> Username · koops<br/>
-              <span style="color: var(--color-positive)">ok</span> Passphrase · ********<br/>
-              <span style="color: var(--color-positive)">ok</span> Creating your 🌱 Ed25519 keypair...<br/>
-              <span style="color: var(--color-positive)">ok</span> Adding to ssh-agent...<br/>
-              <span style="color: var(--color-positive)">ok</span> Profile 3ae66df3-6ac7-4466-9013-83839749ed05 created.<br/>
-              <br/>
-              Your radicle Peer ID is <span style="color: var(--color-positive)">hyncoz7x4s8x9447g6yogy4iy41q8i4juy5uhou57w1ga7obt644wo</span>. This identifies your device.<br/>
-              Your personal 🌱 URN is <span style="color: var(--color-positive)">rad:git:hnrkmx6trm4bu19bwa4apbxj8ftw8f7amfdyy</span>. This identifies you across devices.<br/>
-              <br/>
-              <span style="color: var(--color-primary)">=> To create a radicle project, run `rad init` from a git repository.</span><br/>
+              Initializing your 🌱 profile and identity<br />
+              <br />
+              <span style="color: var(--color-positive)">ok</span> Username ·
+              koops<br />
+              <span style="color: var(--color-positive)">ok</span> Passphrase ·
+              ********<br />
+              <span style="color: var(--color-positive)">ok</span> Creating your
+              🌱 Ed25519 keypair...<br />
+              <span style="color: var(--color-positive)">ok</span> Adding to
+              ssh-agent...<br />
+              <span style="color: var(--color-positive)">ok</span> Profile
+              3ae66df3-6ac7-4466-9013-83839749ed05 created.<br />
+              <br />
+              Your radicle Peer ID is
+              <span style="color: var(--color-positive)"
+                >hyncoz7x4s8x9447g6yogy4iy41q8i4juy5uhou57w1ga7obt644wo</span
+              >. This identifies your device.<br />
+              Your personal 🌱 URN is
+              <span style="color: var(--color-positive)"
+                >rad:git:hnrkmx6trm4bu19bwa4apbxj8ftw8f7amfdyy</span
+              >. This identifies you across devices.<br />
+              <br />
+              <span style="color: var(--color-primary)"
+                >=> To create a radicle project, run `rad init` from a git
+                repository.</span
+              ><br />
             </span>
           </CodeBlock>
         </div>
@@ -229,10 +274,13 @@ p {
         expanded={activeStep === Step.addUpstreamCliToPath}
         onSkip={() => markStepAsDone(Step.addUpstreamCliToPath)}
         title="Add the Upstream CLI to PATH"
-        waitingFor="the Upstream CLI to be installed"
-      >
+        waitingFor="the Upstream CLI to be installed">
         <div class="step-content" slot="content">
-          <p>The Upstream CLI adds additional commands needed for code collaboration with upstream. Please ensure that the §HOME/.radicle/bin directory is added to your shell"s PATH.</p>
+          <p>
+            The Upstream CLI adds additional commands needed for code
+            collaboration with upstream. Please ensure that the
+            §HOME/.radicle/bin directory is added to your shell"s PATH.
+          </p>
         </div>
       </CheckItem>
       <CheckItem
@@ -240,11 +288,18 @@ p {
         expanded={activeStep === Step.setUpGit}
         onSkip={() => markStepAsDone(Step.setUpGit)}
         title="Set up Git"
-        badge={gitVersion && `Version ${gitVersion} installed`}
-      >
+        badge={gitVersion && `Version ${gitVersion} installed`}>
         <div class="step-content" slot="content">
-          <p>Radicle is built on Git. In order to collaborate with others, you"ll need at least version 2.35.1 of Git installed.</p>
-          <p>You can download the latest version on the <a href="https://git-scm.com/download/" class="typo-link">official website</a>.</p>
+          <p>
+            Radicle is built on Git. In order to collaborate with others, you"ll
+            need at least version 2.35.1 of Git installed.
+          </p>
+          <p>
+            You can download the latest version on the <a
+              href="https://git-scm.com/download/"
+              class="typo-link">official website</a
+            >.
+          </p>
         </div>
       </CheckItem>
     </div>
