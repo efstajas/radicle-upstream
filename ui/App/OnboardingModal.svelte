@@ -67,8 +67,6 @@
       case Step.addUpstreamCliToPath: {
         const upstreamCliCheck = await ipc.checkShellForCommand("upstream");
 
-        console.log("upstream", upstreamCliCheck.exists);
-
         if (upstreamCliCheck.exists) {
           return {
             step: forStep,
@@ -130,9 +128,9 @@
   $: {
     clearInterval(checkInterval);
 
-    checkInterval = setInterval(() => {
-      performCheck(activeStep);
-    }, 1000);
+    // checkInterval = setInterval(() => {
+    //   performCheck(activeStep);
+    // }, 1000);
   }
 
   onDestroy(() => {
@@ -140,10 +138,10 @@
   });
 
   onMount(async () => {
-    await performCheck(Step.installRadCli);
-    await performCheck(Step.createRadIdentity);
-    await performCheck(Step.addUpstreamCliToPath);
-    await performCheck(Step.setUpGit);
+    // await performCheck(Step.installRadCli);
+    // await performCheck(Step.createRadIdentity);
+    // await performCheck(Step.addUpstreamCliToPath);
+    // await performCheck(Step.setUpGit);
   });
 </script>
 
@@ -208,7 +206,7 @@
         badge={radCliVersion && `Version ${radCliVersion} installed`}>
         <div class="step-content" slot="content">
           <p>
-            First, let"s install the Radicle CLI. You"ll use the CLI to create
+            First, let's install the Radicle CLI. You'll use the CLI to create
             and publish projects to the Radicle network, or clone existing ones
             to your machine.
           </p>
@@ -294,7 +292,7 @@
         badge={gitVersion && `Version ${gitVersion} installed`}>
         <div class="step-content" slot="content">
           <p>
-            Radicle is built on Git. In order to collaborate with others, you"ll
+            Radicle is built on Git. In order to collaborate with others, you'll
             need at least version 2.35.1 of Git installed.
           </p>
           <p>

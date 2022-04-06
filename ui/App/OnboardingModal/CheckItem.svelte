@@ -143,7 +143,7 @@
       <div class="card-end">
         {#if waitingFor}
           <div class="waiting-for">
-            <Ellipsis />
+            <Ellipsis animate />
             <p class="typo-text-small-bold">Waiting for {waitingFor}</p>
           </div>
         {/if}
